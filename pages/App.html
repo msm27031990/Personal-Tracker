@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Personal Tracker</title>
+  <style>
+    :root {
+      --primary-color: #4a90e2;
+      --accent-color: #f5f7fa;
+      --text-color: #333;
+      --button-color: #4a90e2;
+      --button-text: #fff;
+      --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(to bottom right, #e3f2fd, #ffffff);
+      color: var(--text-color);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+
+    h1 {
+      font-size: 2em;
+      margin-bottom: 10px;
+      color: var(--primary-color);
+    }
+
+    h2 {
+      margin-top: 20px;
+      color: var(--primary-color);
+    }
+
+    #content {
+      width: 100%;
+      max-width: 400px;
+      background: var(--accent-color);
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      margin-top: 20px;
+    }
+
+    input[type="time"],
+    input[type="number"] {
+      width: 100%;
+      padding: 10px;
+      font-size: 1em;
+      margin: 10px 0;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      box-sizing: border-box;
+    }
+
+    button {
+      background-color: var(--button-color);
+      color: var(--button-text);
+      border: none;
+      padding: 10px 20px;
+      font-size: 1em;
+      border-radius: 8px;
+      cursor: pointer;
+      margin: 5px;
+      box-shadow: var(--shadow);
+      transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #357ab8;
+    }
+
+    p {
+      font-size: 1.1em;
+      margin: 10px 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>🕒 Personal Time Tracker</h1>
+  <div id="content"></div>
+
+  <script>
+    const content = document.getElementById("content");
+
+
+    function showAlarmClock() {
+      content.innerHTML = `
+        <h2>⏰ Alarm Clock</h2>
+        <input type="time" id="alarmTime" />
+        <button onclick="setAlarm()">Set Alarm</button>
+        <p id="alarmStatus"></p>
+      `;
+    }
+
+    function setAlarm() {
+      const time = document.getElementById("alarmTime").value;
+      const status = document.getElementById("alarmStatus");
+      if (!time) return;
+      const alarmTime = new Date();
+      const [hours, minutes] = time.split(":");
+      alarmTime.setHours(hours, minutes, 0);
+
+      status.textContent = `Alarm set for ${time}`;
+      const interval = setInterval(() => {
+        const now = new Date();
+        if (
+          now.getHours() === alarmTime.getHours() &&
+          now.getMinutes() === alarmTime.getMinutes()
+        ) {
+          alert("⏰ Alarm ringing!");
+          clearInterval(interval);
+          status.textContent = "Alarm triggered!";
+        }
+      }, 1000);
+    }
+
+    function showStopwatch() {
+      content.innerHTML = `
+        <h2>⏱ Stopwatch</h2>
+        <p id="stopwatch">0:00</p>
+        <button onclick="startStopwatch()">Start</button>
+        <button onclick="resetStopwatch()">Reset</button>
+      `;
+    }
+
+    let stopwatchInterval;
+    let stopwatchSeconds = 0;
+
+    function startStopwatch() {
+      clearInterval(stopwatchInterval);
+      stopwatchInterval = setInterval(() => {
+        stopwatchSeconds++;
+        const minutes = Math.floor(stopwatchSeconds / 60);
+        const seconds = stopwatchSeconds % 60;
+        document.getElementById("stopwatch").textContent = `${minutes}:${seconds
+          .toString()
+          .padStart(2, "0")}`;
+      }, 1000);
+    }
+
+    function resetStopwatch() {
+      clearInterval(stopwatchInterval);
+      stopwatchSeconds = 0;
+      document.getElementById("stopwatch").textContent = "0:00";
+    }
+
+    function showTimer() {
+      content.innerHTML = `
+        <h2>⏳ Timer</h2>
+        <input type="number" id="timerInput" placeholder="Seconds" />
+        <button onclick="startTimer()">Start Timer</button>
+        <p id="timerDisplay"></p>
+      `;
+    }
+
+    function startTimer() {
+      let seconds = parseInt(document.getElementById("timerInput").value);
+      const display = document.getElementById("timerDisplay");
+      if (isNaN(seconds)) return;
+      display.textContent = `${seconds} seconds remaining`;
+      const interval = setInterval(() => {
+        seconds--;
+        display.textContent = `${seconds} seconds remaining`;
+        if (seconds <= 0) {
+          clearInterval(interval);
+          alert("⏳ Timer done!");
+          display.textContent = "Timer completed!";
+        }
+      }, 1000);
+    }
+
+    async function showWeather() {
+      content.innerHTML = `<h2>🌤 Weather of the Day</h2><p>Loading...</p>`;
+      try {
+        const lat = 52.23; // Warsaw
+        const lon = 21.01;
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`;
+
+        const response = await fetch(url);
+        const data = await response.json();
+        const weather = data.current_weather;
+
+        const weatherText = `🌡️ ${weather.temperature}°C, 💨 ${weather.windspeed} km/h, ☁️ Code ${weather.weathercode}`;
+        content.innerHTML = `
+          <h2>${weatherText}</h2>
+        `;
+      } catch (err) {
+        content.innerHTML = `<p>Error fetching weather data.</p>`;
+      }
+    }
+
+    function detectOrientation() {
+      const angle = window.screen.orientation.angle;
+      const type = window.screen.orientation.type;
+
+      if (type.includes("portrait") && angle === 0) {
+        showAlarmClock();
+      } else if (type.includes("landscape") && angle === 90) {
+        showStopwatch();
+      } else if (type.includes("portrait") && angle === 180) {
+        showTimer();
+      } else if (type.includes("landscape") && angle === 270) {
+        showWeather();
+      } else {
+        content.innerHTML = `<p>📱 Unsupported orientation</p>`;
+      }
+    }
+
+    window.addEventListener("orientationchange", detectOrientation);
+    window.addEventListener("load", detectOrientation);
+  </script>
+</body>
+</html>
